@@ -1,0 +1,45 @@
+require("/org/bpmscript/web/theme/bpmscript-default.js");
+
+var theme = new this[request.getParameter("theme") ? request.getParameter("theme") : "BpmScriptTheme"]();
+
+<html>
+<head>
+<title>Address</title>
+</head>
+<body>
+<p>{message}</p>
+<p>
+<form method="POST">
+  <input type="hidden" name="conversationId" value={conversationId}/>
+  <table>
+    <tr>
+    <td>House Name or Number</td>
+    <td>
+      {theme.formText("form.house")}
+      {theme.errors(theme.formErrors("form.house"))}
+    </td>
+    </tr>
+    <tr>
+    <td>Street</td>
+    <td>
+      {theme.formText("form.street")}
+      {theme.errors(theme.formErrors("form.street"))}
+    </td>
+    </tr>
+    <tr>
+    <td>Post Code</td>
+    <td>
+      {theme.formText("form.postcode")}
+      {theme.errors(theme.formErrors("form.postcode"))}
+    </td>
+    </tr>
+    <tr>
+    <td colspan="2" align="right">
+      <input type="submit" name="form.__next" value="Next"/>
+    </td>
+    </tr>
+  </table>
+</form>
+</p>
+</body>
+</html>

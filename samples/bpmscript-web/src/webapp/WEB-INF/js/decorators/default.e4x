@@ -1,0 +1,59 @@
+require("/org/bpmscript/web/theme/bpmscript-default.js");
+
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+<title>BpmScript - {title}</title>
+<link type="text/css" rel="stylesheet" href={base + "/css/style.css"}> </link>
+{new XMLList(head)}
+</head>
+<body>
+<table class="layout">
+<thead>
+<tr>
+<td>
+<table class="menu">
+<tr>
+<td class="menu_left"><a href={link("definition", "index")}>Definitions</a> <a href={link("instance", "index")}>Instances</a></td>
+<td class="menu_center"></td>
+<td class="menu_right"><a href="#">Help</a> | <a href="#">Sign out</a></td>
+</tr>
+</table>
+<table>
+<tr>
+<td>
+<a href={link("default", "index")}><img src={base + "/images/bpmscriptlogo.png"}/></a>
+</td>
+<td>
+<form action={link("search", "index")}>
+<input type="text" name="query" size="40" value={request.getParameter("query") || ""}/>
+<input type="submit" value="Search"/>
+</form>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<table class="layout_content">
+<tr>
+<td></td>
+<td>
+{new XMLList(body)}
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td><a href="http://www.bpmscript.org">http://www.bpmscript.org</a></td>
+</tr>
+</tfoot>
+</table>
+</body>
+</html>

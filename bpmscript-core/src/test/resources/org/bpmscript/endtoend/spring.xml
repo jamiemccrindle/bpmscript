@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xmlns:p="http://www.springframework.org/schema/p"
+   xmlns:aop="http://www.springframework.org/schema/aop"
+   xmlns:tx="http://www.springframework.org/schema/tx"
+   xsi:schemaLocation="
+   http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+   http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+   http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd">
+     
+  <!-- message bus and jms settings -->
+  <bean id="bus"
+    class="org.bpmscript.integration.internal.jms.JmsMessageBus">
+    <property name="addressRegistry" ref="addressRegistry"/>
+    <property name="template" ref="template"/>
+    <property name="syncFormatter" ref="syncChannelFormatter"/>
+  </bean>
+  <bean id="queue" class="org.apache.activemq.command.ActiveMQQueue">
+    <constructor-arg value="bpmscript"/>
+  </bean>
+  <bean id="syncQueueName" class="java.lang.String"><constructor-arg value="bpmscript-sync"/></bean>
+  <bean id="syncQueue" class="org.apache.activemq.command.ActiveMQQueue">
+    <constructor-arg ref="syncQueueName"/>
+  </bean>
+  <bean id="syncChannelFormatter" class="org.bpmscript.integration.internal.jms.SyncChannelFormatter">
+    <property name="remoteAddress" ref="syncQueueName"/>
+  </bean>
+  <bean id="messageConverter" class="org.bpmscript.integration.internal.jms.SerializingMessageConverter"/>
+  <bean id="template" class="org.springframework.jms.core.JmsTemplate">
+    <property name="connectionFactory" ref="pooledConnectionFactory"/>
+    <property name="messageConverter" ref="messageConverter"/>
+    <property name="defaultDestination" ref="queue"/>
+  </bean>
+  <bean id="syncTemplate" class="org.springframework.jms.core.JmsTemplate">
+    <property name="connectionFactory" ref="pooledConnectionFactory"/>
+    <property name="messageConverter" ref="messageConverter"/>
+    <property name="defaultDestination" ref="syncQueue"/>
+  </bean>
+  <bean id="connectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+    <!-- <property name="brokerURL" value="tcp://localhost:61616"/> -->
+    <property name="brokerURL" value="vm://broker1?marshal=true&amp;broker.persistent=false"/>
+  </bean>
+  <bean id="pooledConnectionFactory" class="org.apache.activemq.pool.PooledConnectionFactory">
+    <property name="connectionFactory" ref="connectionFactory"/>
+  </bean>
+  <bean id="syncContainer" class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+    <property name="connectionFactory" ref="connectionFactory"/>
+    <property name="destination" ref="queue"/>
+    <property name="maxConcurrentConsumers" value="10"/>
+    <property name="cacheLevelName" value="CACHE_CONSUMER"/>
+    <property name="messageListener" ref="bus"/>
+  </bean>
+  <bean id="container" class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+    <property name="connectionFactory" ref="connectionFactory"/>
+    <property name="destination" ref="syncQueue"/>
+    <property name="maxConcurrentConsumers" value="4"/>
+    <property name="cacheLevelName" value="CACHE_CONSUMER"/>
+    <property name="messageListener" ref="bus"/>
+  </bean>
+  
+  <!-- services -->
+  <bean id="versionedDefinitionManager" class="org.bpmscript.process.memory.MemoryVersionedDefinitionManager">
+    <constructor-arg>
+      <bean class="org.bpmscript.process.memory.MemoryDefinitionManager"/>
+    </constructor-arg>
+  </bean>
+
+  <bean id="instanceManager" class="org.bpmscript.process.hibernate.HibernateInstanceManager" p:sessionFactory-ref="sessionFactory"/>
+  <alias name="instanceManager" alias="lockingInstanceManager"/>
+  
+  <bean id="scriptChannel" class="org.bpmscript.integration.internal.channel.InternalScriptChannel">
+    <property name="replyTo" value="bpmscript-next"/>
+    <property name="sender" ref="bus"/>
+    <property name="timeoutAddress" value="timeout"/>
+    <property name="errorAddress" value="error"/>
+  </bean>
+  <bean id="continuationJournal" class="org.bpmscript.journal.hibernate.HibernateContinuationJournal" p:sessionFactory-ref="sessionFactory"/>
+  <bean id="scopeStore" class="org.bpmscript.exec.js.scope.hibernate.HibernateScopeStore" p:sessionFactory-ref="sessionFactory"/>
+  <bean id="scopeService" class="org.bpmscript.exec.js.scope.ScopeService">
+    <property name="scopeStore">
+      <bean class="org.bpmscript.exec.js.scope.CachingScopeStore" p:delegate-ref="scopeStore"/>
+    </property>
+  </bean>
+  <bean id="javascriptContinuationService" class="org.bpmscript.exec.js.serialize.JavascriptSerializingContinuationService">
+    <property name="continuationStore" ref="continuationJournal"/>
+  </bean>
+  <bean id="javascriptExecutor" class="org.bpmscript.exec.js.JavascriptProcessExecutor">
+    <property name="continuationService" ref="javascriptContinuationService"/>
+    <property name="scopeService" ref="scopeService"/>
+    <property name="channel" ref="scriptChannel"/>
+  </bean>
+  <bean id="javaContinuationService" class="org.bpmscript.exec.java.seriaize.JavaSerializingContinuationService">
+    <property name="continuationJournal" ref="continuationJournal"/>
+  </bean>
+  <bean id="javaExecutor" class="org.bpmscript.exec.java.JavaProcessExecutor">
+    <property name="continuationService" ref="javaContinuationService"/>
+    <property name="channel" ref="scriptChannel"/>
+  </bean>
+  <bean id="processExecutorLookup" class="org.bpmscript.process.ProcessExecutorLookup">
+    <property name="processExecutors">
+      <map>
+        <entry key="Javascript" value-ref="javascriptExecutor"/>
+        <entry key="Java" value-ref="javaExecutor"/>
+      </map>
+    </property>
+  </bean>
+  <bean id="engine" class="org.bpmscript.process.BpmScriptEngine">
+    <property name="instanceManager" ref="lockingInstanceManager"/>
+    <property name="processExecutorLookup" ref="processExecutorLookup"/>
+    <property name="continuationJournal" ref="continuationJournal"/>
+    <property name="versionedDefinitionManager" ref="versionedDefinitionManager"/>
+  </bean>
+  <bean id="addressRegistry"
+    class="org.bpmscript.integration.internal.SpringAddressRegistry">
+    <property name="senderBean" value="bus"/>
+    <property name="mutableAddressRegistry" ref="mutableAddressRegistry"/>
+  </bean>
+  <bean id="mutableAddressRegistry" class="org.bpmscript.integration.internal.memory.MemoryAddressRegistry"/>
+  <bean id="recorder"
+    class="org.bpmscript.integration.internal.Recorder">
+  </bean>
+  <bean id="recording"
+    class="org.bpmscript.integration.internal.adapter.RecordingAdapter">
+  </bean>
+  <bean id="bpmscript-first" class="org.bpmscript.integration.internal.adapter.BpmScriptFirstAdapter">
+    <property name="engine" ref="engine"/>
+    <property name="sender" ref="bus"/>
+  </bean>
+  <bean id="bpmscript-next" class="org.bpmscript.integration.internal.adapter.BpmScriptNextAdapter">
+    <property name="engine" ref="engine"/>
+    <property name="sender" ref="bus"/>
+    <property name="errorAddress" value="error"/>
+  </bean>
+  <bean id="timeout" class="org.bpmscript.integration.internal.adapter.TimeoutAdapter">
+    <property name="sender" ref="bus"/>
+  </bean>
+  <bean id="error" class="org.bpmscript.integration.internal.adapter.LoggingAdapter"/>
+  <bean id="sync" class="org.bpmscript.integration.internal.memory.MemorySyncChannel"/>
+  <bean id="bpmScriptFacade" class="org.bpmscript.integration.internal.proxy.BpmScriptFacade">
+    <property name="syncChannel" ref="sync"/>
+    <property name="address" value="bpmscript-first"/>
+    <property name="replyTo" value="sync"/>
+    <property name="sender" ref="bus"/>
+  </bean>
+  <bean id="instanceStatusManager" class="org.bpmscript.process.memory.MemoryInstanceStatusManager">
+    <property name="instanceManager" ref="lockingInstanceManager"/>
+    <property name="continuationJournal" ref="continuationJournal"/>
+  </bean>  
+  <bean id="instanceKiller" class="org.bpmscript.process.kill.InstanceKiller">
+    <property name="bpmScriptEngine" ref="engine"/>
+    <property name="instanceStatusManager" ref="instanceStatusManager"/>
+    <property name="continuationJournal" ref="continuationJournal"/>
+  </bean>
+  <bean id="autoStartManager" class="org.bpmscript.process.autostart.AutoStartManager">
+    <property name="bpmScriptFacade" ref="bpmScriptFacade"/>
+    <property name="instanceKiller" ref="instanceKiller"/>
+    <property name="instanceStatusManager" ref="instanceStatusManager"/>
+    <property name="versionedDefinitionManager" ref="versionedDefinitionManager"/>
+  </bean>
+  <bean id="conversationCorrelator" class="org.bpmscript.integration.internal.correlation.ConversationCorrelator">
+    <property name="address" value="bpmscript-next"/>
+    <property name="correlatorAddress" value="conversation"/>
+    <property name="replyTo" value="sync"/>
+    <property name="sender" ref="bus"/>
+    <property name="syncChannel" ref="sync"/>
+  </bean>
+  <bean id="conversation" class="org.bpmscript.integration.internal.adapter.ConversationCorrelatorAdapter">
+    <property name="sender" ref="bus"/>
+  </bean>
+  
+  <!-- mysql --> 
+  <bean id="databaseDriver" class="java.lang.String"><constructor-arg value="com.mysql.jdbc.Driver"/></bean>
+  <bean id="databaseUrl" class="java.lang.String"><constructor-arg value="jdbc:mysql://localhost:3306/bpmscript"/></bean>
+  <bean id="databaseUsername" class="java.lang.String"><constructor-arg value="bpmscript"/></bean>
+  <bean id="databasePassword" class="java.lang.String"><constructor-arg value="sa"/></bean>
+  <bean id="databaseDialect" class="java.lang.String"><constructor-arg value="org.hibernate.dialect.MySQLDialect"/></bean>
+  
+  <!-- h2 
+  <bean id="databaseDriver" class="java.lang.String"><constructor-arg value="org.h2.Driver"/></bean>
+  <bean id="databaseUrl" class="java.lang.String"><constructor-arg value="jdbc:h2:~/bpmscript"/></bean>
+  <bean id="databaseUsername" class="java.lang.String"><constructor-arg value="sa"/></bean>
+  <bean id="databasePassword" class="java.lang.String"><constructor-arg value=""/></bean>
+  <bean id="databaseDialect" class="java.lang.String"><constructor-arg value="org.hibernate.dialect.H2Dialect"/></bean>
+  -->
+   
+  <!-- derby
+  <bean id="databaseDriver" class="java.lang.String"><constructor-arg value="org.apache.derby.jdbc.EmbeddedDriver"/></bean>
+  <bean id="databaseUrl" class="java.lang.String"><constructor-arg value="jdbc:derby:test;create=true"/></bean>
+  <bean id="databaseUsername" class="java.lang.String"><constructor-arg value="sa"/></bean>
+  <bean id="databasePassword" class="java.lang.String"><constructor-arg value="sa"/></bean>
+  <bean id="databaseDialect" class="java.lang.String"><constructor-arg value="org.hibernate.dialect.DerbyDialect"/></bean>
+   -->
+
+  <!-- database connection information -->
+  <bean id="serverDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+    <property name="driverClassName" ref="databaseDriver" />
+    <property name="url" ref="databaseUrl" />
+    <property name="username" ref="databaseUsername" />
+    <property name="password" ref="databasePassword" />
+    <property name="maxActive" value="200"/>
+  </bean>
+  
+  <bean id="txManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+    <property name="sessionFactory" ref="sessionFactory" />
+  </bean>
+  
+  <tx:annotation-driven transaction-manager="txManager"/>
+  
+  <!-- object to relational mapping configuration -->
+  <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+    <property name="annotatedClasses">
+      <list>
+        <value>org.bpmscript.journal.hibernate.HibernateContinuationJournalEntry</value>
+        <value>org.bpmscript.process.hibernate.HibernateInstance</value>
+        <value>org.bpmscript.exec.js.scope.hibernate.HibernateScope</value>
+      </list>
+    </property>
+    <property name="hibernateProperties">
+      <bean class="org.bpmscript.util.PropertiesFactoryBean">
+        <property name="map">
+          <map>
+            <entry key="hibernate.dialect" value-ref="databaseDialect" />
+            <entry key="hibernate.hbm2ddl.auto" value="create" />
+            <entry key="hibernate.show_sql" value="false" />
+          </map>
+        </property>
+      </bean>
+    </property>
+    <property name="dataSource" ref="serverDataSource" />
+  </bean>
+
+</beans>

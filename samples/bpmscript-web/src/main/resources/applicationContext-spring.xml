@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xmlns:p="http://www.springframework.org/schema/p"
+   xmlns:integration="http://www.springframework.org/schema/integration"
+   xsi:schemaLocation="http://www.springframework.org/schema/beans
+      http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+      http://www.springframework.org/schema/integration
+      http://www.springframework.org/schema/integration/spring-integration-1.0.xsd
+      http://www.springframework.org/schema/context
+      http://www.springframework.org/schema/context/spring-context-2.5.xsd">
+
+  <!-- spring integration -->
+  <integration:message-bus/>
+  <integration:annotation-driven/>
+
+  <integration:queue-channel id="channel-bpmscript-first"/>
+  <integration:queue-channel id="channel-bpmscript-next"/>
+  <integration:queue-channel id="channel-error"/>
+  <integration:queue-channel id="channel-timeout"/>
+  <integration:queue-channel id="channel-sync"/>
+  <integration:queue-channel id="channel-conversation"/>
+
+  <integration:handler-endpoint input-channel="channel-bpmscript-first" handler="bpmScriptFirst"/>
+  <integration:handler-endpoint input-channel="channel-bpmscript-next" handler="bpmScriptNext"/>
+  <integration:handler-endpoint input-channel="channel-error" handler="error"/>
+  <integration:handler-endpoint input-channel="channel-timeout" handler="timeout"/>
+  <integration:handler-endpoint input-channel="channel-sync" handler="sync"/>
+  <integration:handler-endpoint input-channel="channel-conversation" handler="conversation"/>
+  
+  <bean id="springSender" class="org.bpmscript.integration.spring.SpringMessageSender"/>
+  <bean id="bpmScriptService" class="org.bpmscript.integration.spring.proxy.SpringBpmScriptFacade">
+    <property name="address" value="channel-bpmscript-first"/>
+    <property name="returnAddress" value="channel-sync"/>
+    <property name="sender" ref="springSender"/>
+    <property name="syncChannel" ref="sync"/>
+  </bean>
+  <bean id="conversation" class="org.bpmscript.integration.spring.handler.ConversationCorrelatorHandler">
+    <property name="sender" ref="springSender"/>
+  </bean>
+  <bean id="conversationCorrelator" class="org.bpmscript.integration.spring.correlation.SpringConversationCorrelator">
+    <property name="address" value="channel-bpmscript-next"/>
+    <property name="correlatorAddress" value="channel-conversation"/>
+    <property name="returnAddress" value="channel-sync"/>
+    <property name="syncChannel" ref="sync"/>
+    <property name="sender" ref="springSender"/>
+  </bean>
+  <bean id="sync" class="org.bpmscript.integration.spring.SpringSyncChannel"/>
+  <bean id="scriptChannel" class="org.bpmscript.integration.spring.channel.SpringScriptChannel">
+    <property name="returnAddress" value="channel-bpmscript-next"/>
+    <property name="timeoutAddress" value="channel-timeout"/>
+    <property name="errorAddress" value="channel-error"/>
+    <property name="sender" ref="springSender"/>
+    <property name="definitionConfigurationLookup">
+      <bean class="org.bpmscript.process.spring.ApplicationContextDefinitionConfigurationLookup"/>
+    </property>
+  </bean>
+  <bean id="bpmScriptFirst" class="org.bpmscript.integration.spring.handler.BpmScriptFirstHandler">
+    <property name="sender" ref="springSender"/>
+    <property name="errorAddress" value="channel-error"/>
+    <property name="engine" ref="engine"/>
+  </bean>
+  <bean id="bpmScriptNext" class="org.bpmscript.integration.spring.handler.BpmScriptNextHandler">
+    <property name="sender" ref="springSender"/>
+    <property name="engine" ref="engine"/>
+    <property name="errorAddress" value="channel-error"/>
+  </bean>
+  <bean id="timeout" class="org.bpmscript.integration.spring.handler.TimeoutHandler">
+      <property name="sender" ref="springSender"/>
+  </bean>
+  <bean id="error" class="org.bpmscript.integration.spring.handler.LoggingHandler"/>
+  <bean id="paramConverter" class="org.bpmscript.web.ParamToJsConverter"/>
+
+  <!-- memory engine -->
+  <bean id="versionedDefinitionManager" class="org.bpmscript.process.memory.MemoryVersionedDefinitionManager">
+    <constructor-arg>
+      <bean class="org.bpmscript.process.memory.MemoryDefinitionManager"/>
+    </constructor-arg>
+  </bean>
+  <bean id="instanceManager" class="org.bpmscript.process.memory.MemoryInstanceManager"/>
+  <bean id="lockingInstanceManager" class="org.bpmscript.process.lock.LockingInstanceManager">
+    <constructor-arg ref="instanceManager"/>
+  </bean>
+  <bean id="continuationJournal" class="org.bpmscript.exec.serialize.memory.MemoryContinuationJournal"/>
+  <bean id="continuationService" class="org.bpmscript.exec.serialize.SerializingContinuationService">
+    <property name="continuationStore" ref="continuationJournal"/>
+  </bean>
+  <bean id="scopeService" class="org.bpmscript.exec.scope.ScopeService">
+    <property name="libraryAssociationQueue" ref="processLibraryAssociationQueue"/>
+  </bean>
+  <bean id="executor" class="org.bpmscript.exec.ProcessExecutor">
+    <property name="continuationService" ref="continuationService"/>
+    <property name="scopeService" ref="scopeService"/>
+  </bean>
+  <bean id="engine" class="org.bpmscript.process.BpmScriptEngine">
+    <property name="channel" ref="scriptChannel"/>
+    <property name="instanceManager" ref="lockingInstanceManager"/>
+    <property name="processExecutor" ref="executor"/>
+    <property name="continuationJournal" ref="continuationJournal"/>
+    <property name="versionedDefinitionManager" ref="versionedDefinitionManager"/>
+  </bean>
+  <bean id="instanceStatusManager" class="org.bpmscript.process.memory.MemoryInstanceStatusManager">
+    <property name="instanceManager" ref="lockingInstanceManager"/>
+    <property name="continuationJournal" ref="continuationJournal"/>
+  </bean>  
+  <bean id="instanceKiller" class="org.bpmscript.process.kill.InstanceKiller">
+    <property name="bpmScriptEngine" ref="engine"/>
+    <property name="instanceStatusManager" ref="instanceStatusManager"/>
+    <property name="continuationJournal" ref="continuationJournal"/>
+  </bean>
+  
+  <bean id="processLibraryChangeQueue" class="java.util.concurrent.LinkedBlockingQueue"/>
+  <bean id="processLibraryAssociationQueue" class="java.util.concurrent.LinkedBlockingQueue"/>
+  <bean id="viewLibraryChangeQueue" class="java.util.concurrent.LinkedBlockingQueue"/>
+  <bean id="viewLibraryAssociationQueue" class="java.util.concurrent.LinkedBlockingQueue"/>
+  
+  <bean id="processLibraryFileMonitor" class="org.bpmscript.exec.reload.LibraryFileMonitor">
+    <property name="libraryAssociationQueue" ref="processLibraryAssociationQueue"/>
+    <property name="libraryChangeQueue" ref="processLibraryChangeQueue"/>
+  </bean>
+
+  <bean id="viewLibraryFileMonitor" class="org.bpmscript.exec.reload.LibraryFileMonitor">
+    <property name="libraryAssociationQueue" ref="viewLibraryAssociationQueue"/>
+    <property name="libraryChangeQueue" ref="viewLibraryChangeQueue"/>
+  </bean>
+
+  <bean id="fileLoad" class="org.bpmscript.process.FolderDefinitionLoader">
+    <property name="versionedDefinitionManager" ref="versionedDefinitionManager"/>
+    <property name="engine" ref="engine"/>
+    <property name="folder" value="classpath:/org/bpmscript/definition/"/>
+    <property name="libraryChangeQueue" ref="processLibraryChangeQueue"/>
+  </bean>
+
+</beans>

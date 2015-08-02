@@ -1,0 +1,17 @@
+require("/org/bpmscript/web/theme/bpmscript-default.js");
+require("/org/bpmscript/web/theme/bpmscript-blue.js");
+require("/org/bpmscript/web/theme/admin.js");
+
+var theme = new BpmScriptAdminTheme(new this[request.getParameter("theme") ? request.getParameter("theme") : "BpmScriptTheme"]());
+
+<html>
+<head>
+<meta name="category" content="definitions"/>
+<title>Home</title>
+</head>
+<body>
+<p>
+{theme.box("Definitions", theme.definitionsTable(list))}
+</p>
+</body>
+</html>

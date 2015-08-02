@@ -1,0 +1,102 @@
+body {
+  font-family: arial;
+  font-size: 14px;
+}
+
+a:link, a:visited { color: #000077; text-decoration: none; }
+a:hover { color: #006; text-decoration: underline; }
+
+.layout {
+  width: 100%;
+}
+
+.layout thead tr td {
+  vertical-align: middle;
+}
+
+.layout thead table {
+}
+
+.layout tfoot tr td {
+  text-align: center;
+}
+
+.layout_content {
+  height: 400px;
+  vertical-align: top;
+}
+
+.menu {
+  width: 100%;
+}
+
+.menu_left {
+  text-align: left;
+}
+
+td.menu_right {
+  text-align: right;
+}
+
+img {
+  border: none;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+table * {
+  font-size: 14px;
+}
+
+td {
+  vertical-align: top;
+}
+
+tbody th {
+  text-align: left;
+}
+
+.boxtable {
+  border: solid 1px #333333;
+}
+
+.boxheader {
+  background-color: #DDDDDD;
+  border: solid 1px #AAAAAA;
+}
+
+.boxheader td {
+  padding-left: 5px;
+}
+
+.boxcontent {
+  border: solid 1px #AAAAAA;
+}
+
+.boxcontent > td {
+  padding: 3px 3px 3px 3px;
+}
+
+.pagedtable thead th {
+  background-color: #EEEEEE;
+  padding: 3px 3px 3px 3px;
+  border: solid 1px #AAAAAA;
+}
+.pagedtable tbody {
+  border: solid 1px #AAAAAA;
+}
+.pagedtable tfoot td {
+  background-color: #EEEEEE;
+  text-align: right;
+  border: solid 1px #AAAAAA;
+}
+.pagedtable tfoot td span {
+  font-size:small;
+}
+.tablerow_odd {
+}
+.tablerow_even {
+  background-color: #EFEFEF;
+}

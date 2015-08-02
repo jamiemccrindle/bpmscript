@@ -1,0 +1,31 @@
+require("/org/bpmscript/web/theme/bpmscript-default.js");
+require("/org/bpmscript/web/theme/bpmscript-blue.js");
+require("/org/bpmscript/web/theme/admin.js");
+
+var theme = new BpmScriptAdminTheme(new this[request.getParameter("theme") ? request.getParameter("theme") : "BpmScriptTheme"]());
+
+<html>
+<head>
+<meta name="category" content="definitions"/>
+<title>Definitions</title>
+<script language="javascript" src={base + "/js/highlighter/shCore.js"}> </script>
+<script language="javascript" src={base + "/js/highlighter/shBrushJScript.js"}> </script>
+<link type="text/css" rel="stylesheet" href={base + "/css/highlighter/SyntaxHighlighter.css"}> </link>
+</head>
+<body>
+<p>
+{theme.box("Definition", theme.definition(value), "one")}
+</p>
+{theme.box("Instances", theme.instanceTable("instances"), "one")}
+<p>
+{theme.box("Versions", theme.versionsTable(versions), "one")}
+</p>
+<p>
+{theme.box("Source", theme.source(value.source), "one")}
+</p>
+<script language="javascript">
+dp.SyntaxHighlighter.ClipboardSwf = '/flash/clipboard.swf';
+dp.SyntaxHighlighter.HighlightAll('code');
+</script>
+</body>
+</html>

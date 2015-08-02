@@ -1,0 +1,9 @@
+<decorators defaultdir="">
+    <excludes>
+        <pattern>/demos/*</pattern>
+        <pattern>/resources/*</pattern>
+    </excludes> 
+    <decorator name="default" page="/main.template">
+        <pattern>/*</pattern>
+    </decorator>
+</decorators>

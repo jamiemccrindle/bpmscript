@@ -1,0 +1,20 @@
+require("/org/bpmscript/web/theme/bpmscript-default.js");
+require("/org/bpmscript/web/theme/bpmscript-blue.js");
+require("/org/bpmscript/web/theme/admin.js");
+
+var theme = new BpmScriptAdminTheme(new this[request.getParameter("theme") ? request.getParameter("theme") : "BpmScriptTheme"]());
+
+<html>
+<head>
+<meta name="category" content="instances"/>
+<title>Instance</title>
+</head>
+<body>
+<p>
+{theme.box("Instance", theme.instance(value), "one")}
+</p>
+<p>
+{theme.box("Branches", theme.continuationEntriesTable(entries), "one")}
+</p>
+</body>
+</html>

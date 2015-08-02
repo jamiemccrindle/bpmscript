@@ -1,0 +1,9 @@
+<html>
+<head>
+<meta name="category" content="home"/>
+<title>{title}</title>
+</head>
+<body>
+{new XMLList(raw)}
+</body>
+</html>

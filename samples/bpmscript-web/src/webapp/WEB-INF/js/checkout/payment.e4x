@@ -1,0 +1,35 @@
+require("/org/bpmscript/web/theme/bpmscript-default.js");
+
+var theme = new this[request.getParameter("theme") ? request.getParameter("theme") : "BpmScriptTheme"]();
+
+<html>
+<head>
+<title>Payment</title>
+</head>
+<body>
+<p>{message}</p>
+<p>
+<form method="POST">
+  <input type="hidden" name="conversationId" value={conversationId}/>
+  <table>
+    <tr>
+    <td>Card Type</td>
+    <td>{theme.formSelect("form.cardtype", cardtypes)}</td>
+    </tr>
+    <tr>
+    <td>Card Number</td>
+    <td>
+      {theme.formText("form.cardnumber")}
+      {theme.errors(theme.formErrors("form.cardnumber"))}
+    </td>
+    </tr>
+    <tr>
+    <td colspan="2" align="right">
+      <input type="submit" name="form.__next" value="Next"/>
+    </td>
+    </tr>
+  </table>
+</form>
+</p>
+</body>
+</html>

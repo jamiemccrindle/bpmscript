@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xmlns:p="http://www.springframework.org/schema/p"
+   xsi:schemaLocation="http://www.springframework.org/schema/beans 
+    http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+  <bean id="bus"
+    class="org.bpmscript.integration.internal.memory.MemoryMessageBus">
+    <property name="addressRegistry" ref="addressRegistry"/>
+  </bean>
+  <bean id="versionedDefinitionManager" class="org.bpmscript.process.memory.MemoryVersionedDefinitionManager">
+    <constructor-arg>
+      <bean class="org.bpmscript.process.memory.MemoryDefinitionManager"/>
+    </constructor-arg>
+  </bean>
+  <bean id="instanceManager" class="org.bpmscript.process.memory.MemoryInstanceManager"/>
+  <bean id="lockingInstanceManager" class="org.bpmscript.process.lock.LockingInstanceManager">
+    <constructor-arg ref="instanceManager"/>
+  </bean>
+  <bean id="scriptChannel" class="org.bpmscript.integration.internal.channel.InternalScriptChannel">
+    <property name="replyTo" value="bpmscript-next"/>
+    <property name="sender" ref="bus"/>
+    <property name="timeoutAddress" value="timeout"/>
+    <property name="errorAddress" value="error"/>
+    <property name="definitionConfigurationLookup">
+      <bean class="org.bpmscript.process.spring.ApplicationContextDefinitionConfigurationLookup"/>
+    </property>
+  </bean>
+  <bean id="continuationJournal" class="org.bpmscript.journal.memory.MemoryContinuationJournal"/>
+  <bean id="scopeService" class="org.bpmscript.exec.js.scope.ScopeService">
+    <property name="libraryAssociationQueue" ref="processLibraryAssociationQueue"/>
+  </bean>
+  
+  <bean id="javascriptContinuationService" class="org.bpmscript.exec.js.serialize.JavascriptSerializingContinuationService">
+    <property name="continuationStore" ref="continuationJournal"/>
+  </bean>
+  <bean id="javascriptExecutor" class="org.bpmscript.exec.js.JavascriptProcessExecutor">
+    <property name="continuationService" ref="javascriptContinuationService"/>
+    <property name="scopeService" ref="scopeService"/>
+    <property name="channel" ref="scriptChannel"/>
+  </bean>
+  <bean id="javaContinuationService" class="org.bpmscript.exec.java.seriaize.JavaSerializingContinuationService">
+    <property name="continuationJournal" ref="continuationJournal"/>
+  </bean>
+  <bean id="javaExecutor" class="org.bpmscript.exec.java.JavaProcessExecutor">
+    <property name="continuationService" ref="javaContinuationService"/>
+    <property name="channel" ref="scriptChannel"/>
+  </bean>
+  <bean id="processExecutorLookup" class="org.bpmscript.process.ProcessExecutorLookup">
+    <property name="processExecutors">
+      <map>
+        <entry key="Javascript" value-ref="javascriptExecutor"/>
+        <entry key="Java" value-ref="javaExecutor"/>
+      </map>
+    </property>
+  </bean>
+  <bean id="engine" class="org.bpmscript.process.BpmScriptEngine">
+    <property name="instanceManager" ref="lockingInstanceManager"/>
+    <property name="processExecutorLookup" ref="processExecutorLookup"/>
+    <property name="continuationJournal" ref="continuationJournal"/>
+    <property name="versionedDefinitionManager" ref="versionedDefinitionManager"/>
+  </bean>
+  <bean id="addressRegistry"
+    class="org.bpmscript.integration.internal.SpringAddressRegistry">
+    <property name="senderBean" value="bus"/>
+  </bean>
+  <bean id="bpmscript-first" class="org.bpmscript.integration.internal.adapter.BpmScriptFirstAdapter">
+    <property name="engine" ref="engine"/>
+    <property name="sender" ref="bus"/>
+  </bean>
+  <bean id="bpmscript-next" class="org.bpmscript.integration.internal.adapter.BpmScriptNextAdapter">
+    <property name="engine" ref="engine"/>
+    <property name="sender" ref="bus"/>
+    <property name="errorAddress" value="error"/>
+  </bean>
+  <bean id="something" class="org.bpmscript.integration.internal.Something">
+  </bean>
+  <bean id="timeout" class="org.bpmscript.integration.internal.adapter.TimeoutAdapter">
+    <property name="sender" ref="bus"/>
+  </bean>
+  <bean id="sync" class="org.bpmscript.integration.internal.memory.MemorySyncChannel"/>
+  <bean id="fileLoad" class="org.bpmscript.process.FolderDefinitionLoader">
+    <property name="versionedDefinitionManager" ref="versionedDefinitionManager"/>
+    <property name="engine" ref="engine"/>
+    <property name="folder" value="classpath:/org/bpmscript/definition/"/>
+    <property name="libraryChangeQueue" ref="processLibraryChangeQueue"/>
+  </bean>
+  <bean id="bpmScriptService" class="org.bpmscript.integration.internal.proxy.BpmScriptFacade">
+    <property name="syncChannel" ref="sync"/>
+    <property name="address" value="bpmscript-first"/>
+    <property name="replyTo" value="sync"/>
+    <property name="sender" ref="bus"/>
+  </bean>
+  <bean id="conversationCorrelator" class="org.bpmscript.integration.internal.correlation.ConversationCorrelator">
+    <property name="address" value="bpmscript-next"/>
+    <property name="correlatorAddress" value="conversation"/>
+    <property name="replyTo" value="sync"/>
+    <property name="sender" ref="bus"/>
+    <property name="syncChannel" ref="sync"/>
+  </bean>
+  <bean id="conversation" class="org.bpmscript.integration.internal.adapter.ConversationCorrelatorAdapter">
+    <property name="sender" ref="bus"/>
+  </bean>
+  <bean id="error" class="org.bpmscript.integration.internal.adapter.LoggingAdapter"/>
+  <bean id="paramConverter" class="org.bpmscript.web.ParamToJsConverter"/>
+  
+  <bean id="processLibraryChangeQueue" class="java.util.concurrent.LinkedBlockingQueue"/>
+  <bean id="processLibraryAssociationQueue" class="java.util.concurrent.LinkedBlockingQueue"/>
+  <bean id="viewLibraryChangeQueue" class="java.util.concurrent.LinkedBlockingQueue"/>
+  <bean id="viewLibraryAssociationQueue" class="java.util.concurrent.LinkedBlockingQueue"/>
+  
+  <bean id="processLibraryFileMonitor" class="org.bpmscript.exec.reload.LibraryFileMonitor">
+    <property name="libraryAssociationQueue" ref="processLibraryAssociationQueue"/>
+    <property name="libraryChangeQueue" ref="processLibraryChangeQueue"/>
+  </bean>
+
+  <bean id="viewLibraryFileMonitor" class="org.bpmscript.exec.reload.LibraryFileMonitor">
+    <property name="libraryAssociationQueue" ref="viewLibraryAssociationQueue"/>
+    <property name="libraryChangeQueue" ref="viewLibraryChangeQueue"/>
+  </bean>
+
+</beans>
