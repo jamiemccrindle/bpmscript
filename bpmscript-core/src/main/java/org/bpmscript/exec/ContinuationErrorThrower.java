@@ -17,9 +17,9 @@
 
 package org.bpmscript.exec;
 
-import java.io.Serializable;
+import org.mozilla.javascript.NativeContinuation;
 
-import org.mozilla.javascript.continuations.Continuation;
+import java.io.Serializable;
 
 /**
  * Throws continuation and kill exceptions
@@ -31,7 +31,7 @@ public class ContinuationErrorThrower implements Serializable {
     /**
      * @param continuation throw a new continuation error
      */
-    public void throwContinuation(Continuation continuation) {
+    public void throwContinuation(NativeContinuation continuation) {
         throw new ContinuationError(continuation);
     }
     

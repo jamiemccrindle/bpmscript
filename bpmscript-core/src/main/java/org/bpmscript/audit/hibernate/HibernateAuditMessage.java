@@ -17,24 +17,23 @@
 
 package org.bpmscript.audit.hibernate;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Lob;
-import javax.persistence.Table;
-
 import org.bpmscript.audit.IAuditMessage;
-import org.hibernate.annotations.Index;
+
+import javax.persistence.*;
 
 /**
  * Persistent implementation of the audit message
  */
 @Entity
-@Table(name="AUDIT_MESSAGE")
+@Table(name = "AUDIT_MESSAGE", indexes = {
+        @Index(columnList = "message_id"),
+        @Index(columnList = "timestamp_long"),
+        @Index(columnList = "destination"),
+        @Index(columnList = "reply_to"),
+        @Index(columnList = "correlation_id"),
+})
 public class HibernateAuditMessage implements IAuditMessage {
-    
+
     private long id;
     private String messageId;
     private long timestampLong;
@@ -44,53 +43,61 @@ public class HibernateAuditMessage implements IAuditMessage {
     private String content;
 
     @Id
-    @GeneratedValue(strategy=GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     public long getId() {
         return id;
     }
+
     public void setId(long id) {
         this.id = id;
     }
-    @Index(name = "IDX_AUD_MSGID")
+
     public String getMessageId() {
         return messageId;
     }
+
     public void setMessageId(String messageId) {
         this.messageId = messageId;
     }
-    @Index(name = "IDX_AUD_TIMESTAMP")
+
     public long getTimestampLong() {
         return timestampLong;
     }
+
     public void setTimestampLong(long timestamp) {
         this.timestampLong = timestamp;
     }
-    @Index(name = "IDX_AUD_DEST")
+
     public String getDestination() {
         return destination;
     }
+
     public void setDestination(String destination) {
         this.destination = destination;
     }
-    @Index(name = "IDX_AUD_REPLYTO")
+
     public String getReplyTo() {
         return replyTo;
     }
+
     public void setReplyTo(String replyTo) {
         this.replyTo = replyTo;
     }
-    @Index(name = "IDX_AUD_CORRELATIONID")
+
     public String getCorrelationId() {
         return correlationId;
     }
+
     public void setCorrelationId(String correlationId) {
         this.correlationId = correlationId;
     }
+
     @Lob
-    @Column(length=262143)
+    @Column(length = 262143)
     public String getContent() {
         return content;
     }
+
     public void setContent(String content) {
         this.content = content;
     }

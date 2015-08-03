@@ -19,7 +19,7 @@ public interface IContinuationJournal {
      * @param the branch to check
      * @return the latest version for that branch...
      */
-    String getVersionLatest(final String branch);
+    Object getVersionLatest(final String branch);
 	
 	/**
 	 * Get the continuation associated with this branch

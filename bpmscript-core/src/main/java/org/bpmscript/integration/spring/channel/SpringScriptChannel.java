@@ -16,9 +16,6 @@
  */
 package org.bpmscript.integration.spring.channel;
 
-import java.util.Date;
-import java.util.Map;
-
 import org.bpmscript.BpmScriptException;
 import org.bpmscript.channel.IScriptChannel;
 import org.bpmscript.integration.IEnvelope;
@@ -31,15 +28,17 @@ import org.bpmscript.integration.spring.SpringScriptMessageNames;
 import org.bpmscript.process.IDefinitionConfiguration;
 import org.bpmscript.process.IDefinitionConfigurationLookup;
 import org.bpmscript.process.spring.ApplicationContextDefinitionConfigurationLookup;
-import org.springframework.integration.channel.MessageChannel;
-import org.springframework.integration.message.ErrorMessage;
-import org.springframework.integration.message.GenericMessage;
-import org.springframework.integration.message.Message;
-import org.springframework.integration.message.MessagePriority;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.support.ErrorMessage;
+import org.springframework.messaging.support.GenericMessage;
+
+import java.util.Date;
+import java.util.Map;
 
 /**
  * Spring Integration implementation of the {@link IScriptChannel} interface. Sends
- * Spring Integration {@link Message} objects to the message bus.
+ * Spring Integration Message objects to the message bus.
  */
 public class SpringScriptChannel implements IScriptChannel {
 

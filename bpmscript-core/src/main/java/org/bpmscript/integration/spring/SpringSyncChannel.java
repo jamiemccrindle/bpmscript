@@ -17,15 +17,15 @@
 
 package org.bpmscript.integration.spring;
 
+import org.bpmscript.channel.ISyncChannel;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHandler;
+
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-
-import org.bpmscript.channel.ISyncChannel;
-import org.springframework.integration.handler.MessageHandler;
-import org.springframework.integration.message.Message;
 
 /**
  * A sync channel that uses Spring Integration messaging and correlates on the
@@ -38,23 +38,14 @@ public class SpringSyncChannel implements ISyncChannel, MessageHandler {
 
     private Map<String, BlockingQueue<Object>> replies = new ConcurrentHashMap<String, BlockingQueue<Object>>();
 
-    /**
-     * @see org.bpmscript.channel.reply.ISyncService#expect(java.lang.String)
-     */
     public void expect(String id) {
         replies.put(id, new LinkedBlockingQueue<Object>());
     }
 
-    /**
-     * @see org.bpmscript.channel.reply.ISyncService#close(java.lang.String)
-     */
     public void close(String id) {
         replies.remove(id);
     }
 
-    /**
-     * @see org.bpmscript.channel.reply.ISyncService#get(java.lang.String, long)
-     */
     public Object get(String id, long duration) {
         BlockingQueue<Object> blockingQueue = null;
         blockingQueue = replies.get(id);

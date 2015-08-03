@@ -17,8 +17,8 @@
 
 package org.bpmscript.integration.spring.handler;
 
-import org.springframework.integration.handler.MessageHandler;
-import org.springframework.integration.message.Message;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHandler;
 
 /**
  * Logs messages that are sent to it. If the payload is a {@link Throwable}, logs

@@ -19,10 +19,10 @@ package org.bpmscript.integration.spring.handler;
 
 import org.bpmscript.integration.spring.ISpringMessageSender;
 import org.bpmscript.integration.spring.ReturnAddressSupport;
-import org.springframework.integration.handler.MessageHandler;
-import org.springframework.integration.message.ErrorMessage;
-import org.springframework.integration.message.GenericMessage;
-import org.springframework.integration.message.Message;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.support.ErrorMessage;
+import org.springframework.messaging.support.GenericMessage;
 
 /**
  * SpringConversationCorrelator, turns a request message into a response message and 

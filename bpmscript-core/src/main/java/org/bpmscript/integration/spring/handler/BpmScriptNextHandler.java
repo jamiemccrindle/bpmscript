@@ -24,10 +24,8 @@ import org.bpmscript.integration.internal.ICorrelationIdFormatter;
 import org.bpmscript.integration.spring.ISpringMessageSender;
 import org.bpmscript.integration.spring.ReturnAddressSupport;
 import org.bpmscript.process.IBpmScriptEngine;
-import org.springframework.integration.channel.MessageChannel;
-import org.springframework.integration.handler.MessageHandler;
-import org.springframework.integration.message.ErrorMessage;
-import org.springframework.integration.message.Message;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHandler;
 
 /**
  * Handles sending "next" messages to paused processes

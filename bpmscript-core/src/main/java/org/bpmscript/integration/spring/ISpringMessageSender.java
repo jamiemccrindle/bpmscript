@@ -17,17 +17,15 @@
 
 package org.bpmscript.integration.spring;
 
-import org.springframework.integration.bus.MessageBus;
-import org.springframework.integration.channel.MessageChannel;
-import org.springframework.integration.message.Message;
+import org.springframework.messaging.Message;
 
 /**
- * Utility interface for sending Spring Integration messages to the {@link MessageBus}
+ * Utility interface for sending Spring Integration messages to the MessageBug
  */
 public interface ISpringMessageSender {
     
     /**
-     * Send a message to a named {@link MessageChannel}
+     * Send a message to a named
      * 
      * @param channelName the name of the channel
      * @param message the message to send

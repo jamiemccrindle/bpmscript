@@ -17,15 +17,18 @@
 
 package org.bpmscript.integration.spring.correlation;
 
-import java.util.UUID;
-
+import com.google.common.collect.ImmutableMap;
 import org.bpmscript.channel.ISyncChannel;
 import org.bpmscript.correlation.IConversationCorrelator;
 import org.bpmscript.integration.spring.ISpringMessageSender;
 import org.bpmscript.integration.spring.ReturnAddressSupport;
 import org.bpmscript.integration.spring.handler.ConversationCorrelatorHandler;
-import org.springframework.integration.message.GenericMessage;
-import org.springframework.integration.message.Message;
+import org.springframework.integration.IntegrationMessageHeaderAccessor;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.GenericMessage;
+
+import java.util.UUID;
 
 /**
  * Spring Conversation Correlator. Sends {@link Message}'s to the 
@@ -54,11 +57,15 @@ public class SpringConversationCorrelator implements IConversationCorrelator {
         String id = UUID.randomUUID().toString();
         try {
             syncChannel.expect(id);
-            GenericMessage<Object> invocationMessage = new GenericMessage(in);
-            invocationMessage.getHeader().setReturnAddress(returnAddress);
-            invocationMessage.getHeader().setCorrelationId(id);
-            invocationMessage.getHeader().setAttribute("conversationReturnAddress", address);
-            invocationMessage.getHeader().setAttribute("conversationId", toCorrelationId);
+
+            ImmutableMap<String, Object> headers = ImmutableMap.<String, Object>builder()
+                    .put("conversationReturnAddress", address)
+                    .put("conversationId", toCorrelationId)
+                    .put(MessageHeaders.REPLY_CHANNEL, returnAddress)
+                    .put(IntegrationMessageHeaderAccessor.CORRELATION_ID, id)
+                    .build();
+
+            GenericMessage<Object> invocationMessage = new GenericMessage(in, headers);
 
             sender.send(correlatorAddress, returnAddressSupport.setSerializeableReturnAddress(invocationMessage));
             // this is all duplicate code... from where?

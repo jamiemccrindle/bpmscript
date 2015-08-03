@@ -23,10 +23,9 @@ import org.bpmscript.timeout.ITimeoutManager;
 import org.bpmscript.timeout.memory.MemoryTimeoutManager;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.integration.channel.MessageChannel;
-import org.springframework.integration.handler.MessageHandler;
-import org.springframework.integration.message.Message;
-import org.springframework.integration.message.StringMessage;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHandler;
 
 /**
  * Receives timeout messages and passes them to a timeout manager.

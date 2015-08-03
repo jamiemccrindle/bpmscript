@@ -17,8 +17,9 @@
 
 package org.bpmscript.integration.spring;
 
-import org.springframework.integration.channel.MessageChannel;
-import org.springframework.integration.message.Message;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHeaders;
 
 /**
  * Adds and gets a serialisable returnAddress because the returnAddress is transient
@@ -33,7 +34,7 @@ public class ReturnAddressSupport {
      * @return the message with the header set in it
      */
     public Message<?> setSerializeableReturnAddress(Message<?> message) {
-        Object returnAddress = message.getHeader().getReturnAddress();
+        Object returnAddress = message.getHeaders().get(MessageHeaders.REPLY_CHANNEL);
         if(returnAddress != null) {
             String returnAddressString = null;
             if(returnAddress instanceof MessageChannel) {
@@ -47,7 +48,7 @@ public class ReturnAddressSupport {
         return message;
     }
     public Object getSerializeableReturnAddress(Message<?> message) {
-        Object returnAddress = message.getHeader().getReturnAddress();
+        Object returnAddress = message.getHeaders().get(MessageHeaders.REPLY_CHANNEL);
         if(returnAddress == null) {
             returnAddress = message.getHeader().getAttribute(springScriptMessageNames.getSerializedReturnAddressName());
         }

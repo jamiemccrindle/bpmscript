@@ -21,10 +21,10 @@ import org.bpmscript.BpmScriptException;
 import org.bpmscript.integration.spring.ISpringMessageSender;
 import org.bpmscript.integration.spring.ReturnAddressSupport;
 import org.bpmscript.process.IBpmScriptEngine;
-import org.springframework.integration.channel.MessageChannel;
-import org.springframework.integration.handler.MessageHandler;
-import org.springframework.integration.message.ErrorMessage;
-import org.springframework.integration.message.Message;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.support.ErrorMessage;
 
 /**
  * A spring endpoint that listens for messages and passes them on to

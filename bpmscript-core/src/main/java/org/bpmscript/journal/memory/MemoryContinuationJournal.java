@@ -197,9 +197,6 @@ public class MemoryContinuationJournal implements IContinuationJournal {
         }
     }
 
-    /**
-     * @see org.bpmscript.journal.IContinuationJournal#isDirty(java.lang.String)
-     */
     public String getVersionLatest(String branch) {
         ReadLock readLock = readWriteLock.readLock();
         try {
@@ -236,7 +233,7 @@ public class MemoryContinuationJournal implements IContinuationJournal {
     /**
      * This method cleans up any entries related to a branch
      * 
-     * @param result
+     * @param pid the process id to clean up
      */
     public void cleanUpEntries(String pid) {
         WriteLock writeLock = readWriteLock.writeLock();

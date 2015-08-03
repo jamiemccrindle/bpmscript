@@ -17,78 +17,67 @@
 
 package org.bpmscript.exec.js.scope.hibernate;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.bpmscript.BpmScriptException;
 import org.bpmscript.exec.js.scope.IScopeStore;
 import org.bpmscript.js.Global;
 import org.hibernate.Criteria;
-import org.hibernate.HibernateException;
 import org.hibernate.Session;
-import org.hibernate.criterion.Expression;
+import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Restrictions;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.UniqueTag;
 import org.mozilla.javascript.serialize.ScriptableInputStream;
 import org.mozilla.javascript.serialize.ScriptableOutputStream;
-import org.springframework.orm.hibernate3.HibernateCallback;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Serialises and stores scopes in a database using Hibernate
  */
-public class HibernateScopeStore extends HibernateDaoSupport implements IScopeStore {
+public class HibernateScopeStore implements IScopeStore {
 
-    /**
-     * @see org.bpmscript.exec.js.scope.IScopeStore#findScope(java.lang.String)
-     */
+    private final SessionFactory sessionFactory;
+
+    public HibernateScopeStore(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
+    }
+
     @SuppressWarnings("unchecked")
     public Scriptable findScope(final Context cx, final String definitionId) throws BpmScriptException {
         try {
-            return (Scriptable) getHibernateTemplate().execute(new HibernateCallback() {
-            
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                    try {
-                        Criteria criteria = session.createCriteria(HibernateScope.class);
-                        criteria.add(Expression.eq("definitionId", definitionId));
-                        criteria.setProjection(Projections.property("scope"));
-                        List list = criteria.list();
-                        if(list.size() == 0) {
-                            return null;
-                        }
-                        byte[] bytes = (byte[]) list.get(0);
-                        Scriptable scope = new Global(cx);
-                        ScriptableInputStream in = new ScriptableInputStream(new ByteArrayInputStream(bytes), scope);
-                        HashMap<String, Object> serialisedDiff = (HashMap<String, Object>) in.readObject();
-                        in.close();
-                        for (Map.Entry<String, Object> entry : serialisedDiff.entrySet()) {
-                            String key = entry.getKey();
-                            Object value = entry.getValue();
-                            ScriptableObject.putProperty(scope, key, value);
-                        }
-                        return scope;
-                    } catch(Exception e) {
-                        throw new HibernateException(e);
-                    }
-                }
-            
-            });
+            Session session = sessionFactory.getCurrentSession();
+            session.beginTransaction();
+            Criteria criteria = session.createCriteria(HibernateScope.class);
+            criteria.add(Restrictions.eq("definitionId", definitionId));
+            criteria.setProjection(Projections.property("scope"));
+            List list = criteria.list();
+            session.getTransaction().commit();
+            if (list.size() == 0) {
+                return null;
+            }
+            byte[] bytes = (byte[]) list.get(0);
+            Scriptable scope = new Global(cx);
+            ScriptableInputStream in = new ScriptableInputStream(new ByteArrayInputStream(bytes), scope);
+            HashMap<String, Object> serialisedDiff = (HashMap<String, Object>) in.readObject();
+            in.close();
+            for (Map.Entry<String, Object> entry : serialisedDiff.entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                ScriptableObject.putProperty(scope, key, value);
+            }
+            return scope;
         } catch (Exception e) {
             throw new BpmScriptException(e);
         }
     }
 
-    /**
-     * @see org.bpmscript.exec.js.scope.IScopeStore#storeScope(java.lang.String,
-     *      org.mozilla.javascript.Scriptable)
-     */
     public void storeScope(Context cx, String processId, Scriptable scope) throws BpmScriptException {
         try {
             ScriptableObject global = new Global(cx);
@@ -109,7 +98,10 @@ public class HibernateScopeStore extends HibernateDaoSupport implements IScopeSt
             out.flush();
             out.close();
             byte[] bytes = byteOut.toByteArray();
-            getHibernateTemplate().save(new HibernateScope(processId, bytes));
+            Session session = sessionFactory.getCurrentSession();
+            session.beginTransaction();
+            session.save(new HibernateScope(processId, bytes));
+            session.getTransaction().commit();
         } catch (Exception e) {
             throw new BpmScriptException(e);
         }

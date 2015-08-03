@@ -17,10 +17,8 @@
 
 package org.bpmscript.integration.spring;
 
-import org.springframework.integration.bus.MessageBus;
-import org.springframework.integration.bus.MessageBusAware;
-import org.springframework.integration.channel.MessageChannel;
-import org.springframework.integration.message.Message;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 
 /**
  * 

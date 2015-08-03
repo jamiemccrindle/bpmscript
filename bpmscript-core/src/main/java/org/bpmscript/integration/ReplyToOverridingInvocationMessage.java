@@ -13,7 +13,6 @@ public class ReplyToOverridingInvocationMessage extends InvocationMessageDecorat
 
     /**
      * @param delegate
-     * @param namespace
      */
     public ReplyToOverridingInvocationMessage(IInvocationMessage delegate, String replyToName) {
         super(delegate);

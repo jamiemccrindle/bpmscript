@@ -16,32 +16,19 @@
  */
 package org.bpmscript.exec.js;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Callable;
-
 import org.apache.commons.logging.LogFactory;
-import org.bpmscript.BpmScriptException;
-import org.bpmscript.IExecutorResult;
-import org.bpmscript.IKilledResult;
-import org.bpmscript.IProcessExecutor;
-import org.bpmscript.IProcessDefinition;
+import org.bpmscript.*;
 import org.bpmscript.channel.IScriptChannel;
-import org.bpmscript.exec.FailedResult;
-import org.bpmscript.exec.IContinuationService;
-import org.bpmscript.exec.IKillMessage;
-import org.bpmscript.exec.INextMessage;
-import org.bpmscript.exec.KillMessage;
-import org.bpmscript.exec.NextMessage;
+import org.bpmscript.exec.*;
 import org.bpmscript.exec.js.scope.IDefinitionValidator;
 import org.bpmscript.exec.js.scope.ScriptValidator;
 import org.bpmscript.js.DynamicContextFactory;
 import org.bpmscript.process.IDefinitionConfiguration;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Function;
-import org.mozilla.javascript.Scriptable;
-import org.mozilla.javascript.ScriptableObject;
-import org.mozilla.javascript.continuations.Continuation;
+import org.mozilla.javascript.*;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
 /**
  * The Javascript Process Executor exposes the sendFirst, sendNext and kill methods for sending messages to create
@@ -117,9 +104,6 @@ public class JavascriptProcessExecutor implements IProcessExecutor {
      * a function called "process" (the processMethodName field). 
      * 
      * Once it has executed the definition, it stores the result
-     * 
-     * @see IProcessExecutor#sendFirst(String, String, String, String, IProcessDefinition, Map,
-     *      Object, String[], String, String)
      */
     public IExecutorResult sendFirst(String processId, final String pid, final String branch, final String version,
             final IProcessDefinition processDefinition, final Object message,
@@ -185,9 +169,6 @@ public class JavascriptProcessExecutor implements IProcessExecutor {
     /**
      * Kills the process. Does this by restoring the continuation and passing it a "KILL" message. 
      * This gives the instance a chance to run any code required to release resources.
-     * 
-     * @see org.bpmscript.IProcessExecutor#kill(java.lang.String, java.lang.String,
-     *      java.lang.String, org.bpmscript.IProcessDefinition, java.util.Map)
      */
     public IKilledResult kill(String definitionId, String definitionName, String pid, String branch, String version, String message) throws BpmScriptException {
         final Context cx = new DynamicContextFactory().enterContext();
@@ -202,8 +183,8 @@ public class JavascriptProcessExecutor implements IProcessExecutor {
             HashMap<String, Object> serialisationContext = new HashMap<String, Object>();
             serialisationContext.putAll(definitionConfiguration.getProperties());
             serialisationContext.putAll(invocationContext);
-            Continuation continuation = continuationService.getContinuation(serialisationContext, scope, pid, branch);
-            final Continuation unfrozen = continuation;
+            NativeContinuation continuation = continuationService.getContinuation(serialisationContext, scope, pid, branch);
+            final NativeContinuation unfrozen = continuation;
             final IKillMessage scriptMessage = new KillMessage(pid, branch, message);
             IExecutorResult result = javascriptExecutor.execute(definitionName, pid, branch, version, invocationContext, null, cx,
                     scope, new Callable<Object>() {
@@ -231,9 +212,6 @@ public class JavascriptProcessExecutor implements IProcessExecutor {
     /**
      * Sends in the next message. The right continuation is looked up using the pid and then executed.
      * The result is then stored.
-     * 
-     * @see IProcessExecutor#sendNext(String, String, String, String, String, IProcessDefinition,
-     *      Map, Object, String[])
      */
     public IExecutorResult sendNext(String definitionId, String definitionName, String pid, String branch, String version, String queueId, final Object message) throws BpmScriptException {
 
@@ -250,8 +228,8 @@ public class JavascriptProcessExecutor implements IProcessExecutor {
             serialisationContext.putAll(definitionConfiguration.getProperties());
             serialisationContext.putAll(invocationContext);
             
-            Continuation continuation = continuationService.getContinuation(serialisationContext, scope, pid, branch);
-            final Continuation unfrozen = continuation;
+            NativeContinuation continuation = continuationService.getContinuation(serialisationContext, scope, pid, branch);
+            final NativeContinuation unfrozen = continuation;
             final INextMessage nextMessage = new NextMessage(pid, branch, version, queueId, message);
             IExecutorResult result = javascriptExecutor.execute(definitionName, pid, branch, version, invocationContext, null, cx,
                     scope, new Callable<Object>() {

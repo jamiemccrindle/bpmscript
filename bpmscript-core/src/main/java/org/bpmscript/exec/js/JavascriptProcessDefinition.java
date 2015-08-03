@@ -29,7 +29,7 @@ public class JavascriptProcessDefinition extends ScriptDefinition implements IJa
 
     /**
      * @param name the name of this definition
-     * @param type the source for this definition
+     * @param source the source for this definition
      */
     public JavascriptProcessDefinition(String name, String source) {
         super(name, IJavascriptProcessDefinition.DEFINITION_TYPE_JAVASCRIPT);

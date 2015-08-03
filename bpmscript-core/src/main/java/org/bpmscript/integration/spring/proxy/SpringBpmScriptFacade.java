@@ -17,13 +17,16 @@
 
 package org.bpmscript.integration.spring.proxy;
 
-import java.util.UUID;
-
+import com.google.common.collect.ImmutableMap;
 import org.bpmscript.channel.ISyncChannel;
 import org.bpmscript.integration.spring.ISpringMessageSender;
 import org.bpmscript.process.IBpmScriptFacade;
-import org.springframework.integration.message.GenericMessage;
-import org.springframework.integration.message.Message;
+import org.springframework.integration.IntegrationMessageHeaderAccessor;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.GenericMessage;
+
+import java.util.UUID;
 
 /**
  * Synchronous / Asynchronous way of calling scripts. Useful for creating proxies that
@@ -54,17 +57,17 @@ public class SpringBpmScriptFacade implements IBpmScriptFacade {
     /**
      * Call a definition using it's name and methodName and send it an array of args. 
      * Wait for timeout milliseconds for the response.
-     * 
-     * @see org.bpmscript.integration.internal.proxy.IBpmScriptFacade#call(java.lang.String, java.lang.String, java.lang.Object[])
      */
     public Object call(String definitionName, String methodName, long timeout, Object... args) throws Exception {
         String id = UUID.randomUUID().toString();
         try {
-            GenericMessage<Object[]> in = new GenericMessage<Object[]>(args);
-            in.getHeader().setAttribute("operation", methodName);
-            in.getHeader().setAttribute("definitionName", definitionName);
-            in.getHeader().setReturnAddress(returnAddress);
-            in.getHeader().setCorrelationId(id);
+            ImmutableMap<String, Object> headers = ImmutableMap.<String, Object>builder()
+                    .put("operation", methodName)
+                    .put("definitionName", definitionName)
+                    .put(MessageHeaders.REPLY_CHANNEL, returnAddress)
+                    .put(IntegrationMessageHeaderAccessor.CORRELATION_ID, id)
+                    .build();
+            GenericMessage<Object[]> in = new GenericMessage<Object[]>(args, headers);
             syncChannel.expect(id);
             sender.send(address, in);
 
@@ -93,15 +96,19 @@ public class SpringBpmScriptFacade implements IBpmScriptFacade {
 
     /**
      * Send a one way message to a definition
-     * @see org.bpmscript.integration.internal.proxy.IBpmScriptFacade#callAsync(java.lang.String, java.lang.String, java.lang.Object[])
      */
     public void callAsync(String definitionName, String methodName, Object... args) throws Exception {
         String id = UUID.randomUUID().toString();
-        GenericMessage<Object[]> in = new GenericMessage<Object[]>(args);
-        in.getHeader().setAttribute("operation", "sendFirst");
-        in.getHeader().setAttribute("definitionName", definitionName);
-        in.getHeader().setReturnAddress(returnAddress);
-        in.getHeader().setCorrelationId(id);
+
+        ImmutableMap<String, Object> headers = ImmutableMap.<String, Object>builder()
+                .put("operation", "sendFirst")
+                .put("definitionName", definitionName)
+                .put(MessageHeaders.REPLY_CHANNEL, returnAddress)
+                .put(IntegrationMessageHeaderAccessor.CORRELATION_ID, id)
+                .build();
+
+        GenericMessage<Object[]> in = new GenericMessage<Object[]>(args, headers);
+
         sender.send(address, in);
     }
 

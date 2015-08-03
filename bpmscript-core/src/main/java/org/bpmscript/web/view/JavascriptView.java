@@ -17,16 +17,6 @@
 
 package org.bpmscript.web.view;
 
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
-import java.util.concurrent.BlockingQueue;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.log4j.lf5.util.StreamUtils;
 import org.bpmscript.js.Global;
 import org.bpmscript.js.IJavascriptSourceCache;
 import org.bpmscript.js.MapToJsConverter;
@@ -36,8 +26,17 @@ import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Script;
 import org.mozilla.javascript.ScriptableObject;
 import org.springframework.beans.BeansException;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.servlet.support.RequestContextUtils;
 import org.springframework.web.servlet.view.AbstractTemplateView;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
+import java.util.concurrent.BlockingQueue;
 
 /**
  * A Javascript View
@@ -56,9 +55,6 @@ public class JavascriptView extends AbstractTemplateView {
         setExposeSpringMacroHelpers(false);
     }
     
-    /**
-     * @see org.springframework.web.servlet.view.AbstractView#renderMergedOutputModel(java.util.Map, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
-     */
     @SuppressWarnings("unchecked")
     @Override
     protected void renderMergedTemplateModel(Map model, HttpServletRequest request, HttpServletResponse response)
@@ -85,13 +81,19 @@ public class JavascriptView extends AbstractTemplateView {
                 cx.putThreadLocal(Global.LIBRARY_ASSOCIATION_QUEUE, libraryAssociationQueue);
             }
             Script configScript = javascriptSourceCache.getScript(
-                    new String(StreamUtils.getBytes(getApplicationContext().getResource(configResource).getInputStream())), configResource);
+                    new String(
+                            StreamUtils.copyToByteArray(
+                                    getApplicationContext().getResource(configResource).getInputStream())),
+                    configResource);
             configScript.exec(cx, scope);
             sourceStack.pop();
             
             sourceStack.push(getUrl());
             Script script = javascriptSourceCache.getScript(
-                    new String(StreamUtils.getBytes(getApplicationContext().getResource(getUrl()).getInputStream())), getUrl());
+                    new String(
+                            StreamUtils.copyToByteArray(
+                                    getApplicationContext().getResource(getUrl()).getInputStream())),
+                    getUrl());
             Object result = script.exec(cx, scope);
             response.getWriter().write(result.toString());
             // not sure if this is necessary
@@ -116,9 +118,6 @@ public class JavascriptView extends AbstractTemplateView {
         return this.encoding;
     }
 
-    /**
-     * @see freemarker.cache.TemplateCache#getTemplate
-     */
     protected void initApplicationContext() throws BeansException {
         super.initApplicationContext();
     }

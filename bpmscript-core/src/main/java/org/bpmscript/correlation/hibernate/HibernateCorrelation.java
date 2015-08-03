@@ -17,23 +17,23 @@
 
 package org.bpmscript.correlation.hibernate;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Lob;
-import javax.persistence.Table;
-
 import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.Index;
+
+import javax.persistence.*;
+
 
 /**
- * A persistent class for storing correlations. 
+ * A persistent class for storing correlations.
  */
 @Entity
-@Table(name="CORRELATION")
+@Table(name = "CORRELATION", indexes = {
+        @Index(columnList = "groupId"),
+        @Index(columnList = "correlationId"),
+        @Index(columnList = "expressions"),
+        @Index(columnList = "valueshash")
+})
 public class HibernateCorrelation {
-    
+
     private String id;
     private String channel;
     private String groupId;
@@ -43,44 +43,48 @@ public class HibernateCorrelation {
     private long timeout;
     private byte[] valueObjects;
     private byte[] replyToken;
-    
+
     public HibernateCorrelation() {
     }
-    
-    @Index(name = "IDX_CORRELATION_GROUPID")
+
     public String getGroupId() {
         return groupId;
     }
+
     public void setGroupId(String groupId) {
         this.groupId = groupId;
     }
-    @Index(name = "IDX_CORRELATION_CORRELATIONID")
+
     public String getCorrelationId() {
         return correlationId;
     }
+
     public void setCorrelationId(String correlationId) {
         this.correlationId = correlationId;
     }
-    @Column(length=2047)
+
+    @Column(length = 2047)
     public byte[] getReplyToken() {
         return replyToken;
     }
+
     @Lob
-    @Column(length=8191)
+    @Column(length = 8191)
     public void setReplyToken(byte[] replyToken) {
         this.replyToken = replyToken;
     }
+
     public void setValueObjects(byte[] values) {
         this.valueObjects = values;
     }
+
     @Lob
-    @Column(length=8191)
+    @Column(length = 8191)
     public byte[] getValueObjects() {
         return valueObjects;
     }
 
-    @Column(unique=false,nullable=false)
-    @Index(name = "IDX_CORRELATION_EXPRESSIONS")
+    @Column(unique = false, nullable = false)
     public String getExpressions() {
         return expressions;
     }
@@ -89,7 +93,6 @@ public class HibernateCorrelation {
         this.expressions = expressions;
     }
 
-    @Index(name = "IDX_CORRELATION_VALUESHASH")
     public String getValuesHash() {
         return valuesHash;
     }
@@ -99,7 +102,6 @@ public class HibernateCorrelation {
     }
 
     @Id
-    // @GeneratedValue(strategy=GenerationType.AUTO)
     @GeneratedValue(generator = "system-uuid")
     @GenericGenerator(name = "system-uuid", strategy = "uuid")
     public String getId() {

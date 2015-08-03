@@ -17,7 +17,7 @@ import org.mozilla.javascript.EcmaError;
 import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.WrappedException;
-import org.mozilla.javascript.continuations.Continuation;
+import org.mozilla.javascript.NativeContinuation;
 
 /**
  * A Javascript Process Executor
@@ -39,7 +39,7 @@ public class JavascriptExecutor implements IJavascriptExecutor {
 			Object result = callback.call();
 			return new CompletedResult(pid, branch, version, result);
         } catch (ContinuationError error) {
-            Continuation cont = error.getContinuation();
+			NativeContinuation cont = error.getContinuation();
 //            return new PausedResult(pid, branch, version, cont, stackTraceParser
 //                    .getScriptStackTrace(error.getEvaluatorException()));
             return new PausedResult(pid, branch, version, cont);

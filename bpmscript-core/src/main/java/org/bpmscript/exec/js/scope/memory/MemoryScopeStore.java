@@ -17,11 +17,11 @@
 
 package org.bpmscript.exec.js.scope.memory;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.bpmscript.exec.js.scope.IScopeStore;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Stores scopes in memory
@@ -30,16 +30,10 @@ public class MemoryScopeStore implements IScopeStore {
 
     private ConcurrentHashMap<String, Scriptable> scopeStore = new ConcurrentHashMap<String, Scriptable>();
     
-    /**
-     * @see org.bpmscript.exec.js.scope.IScopeStore#findScope(java.lang.String)
-     */
     public Scriptable findScope(Context cx, String processId) {
         return scopeStore.get(processId);
     }
 
-    /**
-     * @see org.bpmscript.exec.js.scope.IScopeStore#storeScope(java.lang.String, org.mozilla.javascript.Scriptable)
-     */
     public void storeScope(Context cx, String processId, Scriptable scope) {
         scopeStore.put(processId, scope);
     }

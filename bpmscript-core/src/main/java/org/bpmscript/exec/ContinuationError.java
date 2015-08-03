@@ -18,7 +18,7 @@
 package org.bpmscript.exec;
 
 import org.mozilla.javascript.EvaluatorException;
-import org.mozilla.javascript.continuations.Continuation;
+import org.mozilla.javascript.NativeContinuation;
 
 /**
  * An error that is thrown by Javascript processes that contains
@@ -33,14 +33,14 @@ public class ContinuationError extends Error {
 
 	private static final long serialVersionUID = 7672770917586819930L;
 
-	private Continuation c;
+	private NativeContinuation c;
 	private EvaluatorException evaluatorException;
 	
 	/**
 	 * Create a new error with the appropriate continuation 
 	 * @param c the continuation. should not be null.
 	 */
-	public ContinuationError(Continuation c) {
+	public ContinuationError(NativeContinuation c) {
 		this.evaluatorException = new EvaluatorException("continuation");
 		this.c = c;
 	}
@@ -48,7 +48,7 @@ public class ContinuationError extends Error {
 	/**
 	 * @return the continuation
 	 */
-	public Continuation getContinuation() {
+	public NativeContinuation getContinuation() {
 		return c;
 	}
 	

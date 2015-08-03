@@ -17,11 +17,11 @@
 
 package org.bpmscript.integration.spring.handler;
 
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHandler;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import org.springframework.integration.handler.MessageHandler;
-import org.springframework.integration.message.Message;
 
 /**
  * Records messages sent to it up to maxMessages
