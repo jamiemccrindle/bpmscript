@@ -404,7 +404,7 @@
         <plugin>
           <groupId>org.apache.servicemix.tooling</groupId>
           <artifactId>jbi-maven-plugin</artifactId>
-          <version>3.0.1-incubating</version>
+          <version>4.5</version>
           <extensions>true</extensions>
         </plugin>
         <plugin>
